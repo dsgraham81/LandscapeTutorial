@@ -3,6 +3,8 @@ package com.dsgraham.landscape;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Vector3;
 
 /**
  * Created by Doug Graham on 8/30/2017.
@@ -15,8 +17,10 @@ public class Land {
     //Color attribute - (r, g, b, a)
     public static final int COLOR_COMPONENTS = 1;
 
+    public static final int NORMAL_COMPONENTS = 3;
+
     //Total number of components for all attributes
-    public static final int NUM_COMPONENTS = POSITION_COMPONENTS + COLOR_COMPONENTS;
+    public static final int NUM_COMPONENTS = POSITION_COMPONENTS + COLOR_COMPONENTS + NORMAL_COMPONENTS;
 
     //The "size" (total number of floats) for a single triangle
     public static final int PRIMITIVE_SIZE = 3 * NUM_COMPONENTS;
@@ -43,12 +47,13 @@ public class Land {
     private float minHeight;
     private float maxHeight;
     private ShaderProgram shader;
+    private Matrix4 worldTransform;
 
 
     public  Land() {
         shader = new ShaderProgram(Gdx.files.internal("vertex.vert"),
                 Gdx.files.internal("fragment.frag"));
-
+        worldTransform = new Matrix4();
 
         loadHeightData();
         setUpVertices();
@@ -56,11 +61,13 @@ public class Land {
 
         mesh = new Mesh(true, width * height * NUM_COMPONENTS, (width -1) * (height -1) * 6,
                 new VertexAttribute(VertexAttributes.Usage.Position, POSITION_COMPONENTS, "a_position"),
-                new VertexAttribute(VertexAttributes.Usage.ColorPacked, 4, "a_color"));
+                new VertexAttribute(VertexAttributes.Usage.ColorPacked, 4, "a_color"),
+                new VertexAttribute(VertexAttributes.Usage.Normal, NORMAL_COMPONENTS, "a_normal"));
         mesh.setVertices(verts);
         mesh.setIndices(indices);
     }
 
+    Vector3 tempNormal = new Vector3();
     void setUpVertices(){
         verts = new float[width * height * NUM_COMPONENTS];
         int index = 0;
@@ -71,6 +78,11 @@ public class Land {
                 verts[index++] = y;
 
                 verts[index++] = getVertexColor(x, y);
+
+                calculateNormal(x, y, tempNormal);
+                verts[index++] = tempNormal.x;
+                verts[index++] = tempNormal.y;
+                verts[index++] = tempNormal.z;
 
             }
         }
@@ -130,10 +142,39 @@ public class Land {
         return tempColor.toFloatBits();
     }
 
-    public void render(Camera cam){
-        shader.begin();
-        shader.setUniformMatrix("u_projTrans", cam.combined);
+    Vector3 tmpvec = new Vector3();
+    Vector3 tmpvec2 = new Vector3();
+    void calculateNormal(int x, int y, Vector3 normal){
+        int prevX = x;
+        if (x > 0) prevX = x -1;
 
+        int nextX = x;
+        if (x < width -1) nextX = x + 1;
+
+        int prevY = y;
+        if (y > 0) prevY = y -1;
+
+        int nextY = y;
+        if (y < height -1) nextY = y + 1;
+
+        tmpvec.set(prevX, heightData[prevX][y], y).sub(nextX, heightData[nextX][y], y);
+        tmpvec2.set(x, heightData[x][prevY], prevY).sub(x, heightData[x][nextY], nextY);
+
+        tmpvec.crs(tmpvec2);
+        normal.set(tmpvec);
+    }
+
+    float accum = 0;
+    public void render(Camera cam){
+        float dt = Gdx.graphics.getDeltaTime();
+        accum += dt * 30f;
+        shader.begin();
+        worldTransform.idt();
+        worldTransform.translate(width/2f, 0, height/2f);
+        worldTransform.rotate(Vector3.Y, accum);
+        worldTransform.translate(-width/2f, 0, -height/2f);
+        shader.setUniformMatrix("u_projTrans", cam.combined);
+        shader.setUniformMatrix("u_worldTrans", worldTransform);
         mesh.render(shader, GL20.GL_TRIANGLES);
 
         shader.end();
