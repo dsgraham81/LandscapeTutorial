@@ -8,7 +8,7 @@ varying vec4 vColor;
 varying vec3 v_normal;
 
 void main() {
-    vec3 light_dir = normalize(vec3(0.0, -.2, -1.0));
+    vec3 light_dir = normalize(vec3(0.0, -1.0, -1.0));
     vec3 ambient = vec3(.1,.1,.1);
     vec3 light_amount = ambient;
     float NdotL = clamp(dot(v_normal, light_dir), 0.0, 1.0);

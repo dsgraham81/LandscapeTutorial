@@ -110,7 +110,7 @@ public class Land {
     }
 
     void loadHeightData(){
-        Texture heightTexture = new Texture("heightmap.png");
+        Texture heightTexture = new Texture("heightmap2.png");
         width = heightTexture.getWidth();
         height = heightTexture.getHeight();
         minHeight = Float.MAX_VALUE;
@@ -157,17 +157,24 @@ public class Land {
         int nextY = y;
         if (y < height -1) nextY = y + 1;
 
-        tmpvec.set(prevX, heightData[prevX][y], y).sub(nextX, heightData[nextX][y], y);
-        tmpvec2.set(x, heightData[x][prevY], prevY).sub(x, heightData[x][nextY], nextY);
+        tmpvec.set(getCenter(prevX, x, y, y)).sub(getCenter(x, nextX, y, y));
+        tmpvec2.set(getCenter(x,x, prevY, y)).sub(getCenter(x, x, y, nextY));
 
         tmpvec.crs(tmpvec2);
         normal.set(tmpvec);
     }
 
+    Vector3 getCenter(int x1, int x2, int y1, int y2){
+        float dx1 = (heightData[x1][y1] + heightData[x2][y1]) / 2f;
+        float dx2 = (heightData[x1][y2] + heightData[x2][y2]) / 2f;
+
+        return new Vector3((x1 + x2)/2f, (dx1 + dx2) /2f, (y1+y2)/2f);
+    }
+
     float accum = 0;
     public void render(Camera cam){
         float dt = Gdx.graphics.getDeltaTime();
-        accum += dt * 30f;
+        accum += dt * 3f;
         shader.begin();
         worldTransform.idt();
         worldTransform.translate(width/2f, 0, height/2f);
