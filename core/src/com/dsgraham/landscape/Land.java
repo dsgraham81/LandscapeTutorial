@@ -13,7 +13,7 @@ public class Land {
     public static final int POSITION_COMPONENTS = 3;
 
     //Color attribute - (r, g, b, a)
-    public static final int COLOR_COMPONENTS = 4;
+    public static final int COLOR_COMPONENTS = 1;
 
     //Total number of components for all attributes
     public static final int NUM_COMPONENTS = POSITION_COMPONENTS + COLOR_COMPONENTS;
@@ -40,6 +40,8 @@ public class Land {
     private int width;
     private int height;
     private float[][] heightData;
+    private float minHeight;
+    private float maxHeight;
     private ShaderProgram shader;
 
 
@@ -54,7 +56,7 @@ public class Land {
 
         mesh = new Mesh(true, width * height * NUM_COMPONENTS, (width -1) * (height -1) * 6,
                 new VertexAttribute(VertexAttributes.Usage.Position, POSITION_COMPONENTS, "a_position"),
-                new VertexAttribute(VertexAttributes.Usage.ColorUnpacked, COLOR_COMPONENTS, "a_color"));
+                new VertexAttribute(VertexAttributes.Usage.ColorPacked, 4, "a_color"));
         mesh.setVertices(verts);
         mesh.setIndices(indices);
     }
@@ -68,10 +70,7 @@ public class Land {
                 verts[index++] = heightData[x][y];
                 verts[index++] = y;
 
-                verts[index++] = 1.0f;
-                verts[index++] = 1.0f;
-                verts[index++] = 1.0f;
-                verts[index++] = 1.0f;
+                verts[index++] = getVertexColor(x, y);
 
             }
         }
@@ -102,17 +101,33 @@ public class Land {
         Texture heightTexture = new Texture("heightmap.png");
         width = heightTexture.getWidth();
         height = heightTexture.getHeight();
+        minHeight = Float.MAX_VALUE;
+        maxHeight = Float.MIN_VALUE;
 
         heightData = new float[width][height];
         heightTexture.getTextureData().prepare();
         Pixmap pixels = heightTexture.getTextureData().consumePixmap();
         for (int y = 0; y < height; y++){
             for (int x = 0; x < width; x++){
-                int pixelData = (pixels.getPixel(x, y) & 0xff000000) >> 24;
-                heightData[x][y] = pixelData/5f;
+                int pixelData = (pixels.getPixel(x, y) & 0xff000000) >>> 24;
+                float height = pixelData/5f;
+                if (maxHeight < height) maxHeight = height;
+                if (minHeight > height) minHeight = height;
+                heightData[x][y] = height;
             }
         }
 
+    }
+
+    Color tempColor = new Color();
+    private float getVertexColor(int x, int y){
+        float height = heightData[x][y];
+        float delta = (maxHeight - minHeight)/4f;
+        if (height < minHeight + delta) tempColor.set(0,0,1,1);
+        else if (height < minHeight + 2 * delta) tempColor.set(0,1,0,1);
+        else if (height < minHeight + 3 * delta) tempColor.set(.5f,.5f,0,1);
+        else tempColor.set(1,1,1,1);
+        return tempColor.toFloatBits();
     }
 
     public void render(Camera cam){
