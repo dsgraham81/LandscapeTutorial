@@ -123,10 +123,10 @@ public class Land {
     private float getVertexColor(int x, int y){
         float height = heightData[x][y];
         float delta = (maxHeight - minHeight)/4f;
-        if (height < minHeight + delta) tempColor.set(0,0,1,1);
-        else if (height < minHeight + 2 * delta) tempColor.set(0,1,0,1);
-        else if (height < minHeight + 3 * delta) tempColor.set(.5f,.5f,0,1);
-        else tempColor.set(1,1,1,1);
+        if (height < minHeight + delta) tempColor.set(0,0,1,1); // Blue Waters
+        else if (height < minHeight + 2 * delta) tempColor.set(0,.5f,0,1); // Green Grass
+        else if (height < minHeight + 3 * delta) tempColor.set(.6f,.2f,.2f,1); // Brown Mountain
+        else tempColor.set(1,1,1,1); // White snow tops
         return tempColor.toFloatBits();
     }
 
