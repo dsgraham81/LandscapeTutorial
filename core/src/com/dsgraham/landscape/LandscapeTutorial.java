@@ -15,7 +15,7 @@ public class LandscapeTutorial extends ApplicationAdapter {
 	@Override
 	public void create () {
 		camera = new PerspectiveCamera(65, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		camera.position.set(0, 10, 0);
+		camera.position.set(60, 80, 80);
 		camera.lookAt(0,0,0);
 		camera.update();
 

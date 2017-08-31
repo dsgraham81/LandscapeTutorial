@@ -46,16 +46,15 @@ public class Land {
     public  Land() {
         shader = new ShaderProgram(Gdx.files.internal("vertex.vert"),
                 Gdx.files.internal("fragment.frag"));
-        width = 4;
-        height = 3;
 
-        mesh = new Mesh(true, width * height * NUM_COMPONENTS, (width -1) * (height -1) * 6,
-                new VertexAttribute(VertexAttributes.Usage.Position, POSITION_COMPONENTS, "a_position"),
-                new VertexAttribute(VertexAttributes.Usage.ColorUnpacked, COLOR_COMPONENTS, "a_color"));
 
         loadHeightData();
         setUpVertices();
         setUpIndices();
+
+        mesh = new Mesh(true, width * height * NUM_COMPONENTS, (width -1) * (height -1) * 6,
+                new VertexAttribute(VertexAttributes.Usage.Position, POSITION_COMPONENTS, "a_position"),
+                new VertexAttribute(VertexAttributes.Usage.ColorUnpacked, COLOR_COMPONENTS, "a_color"));
         mesh.setVertices(verts);
         mesh.setIndices(indices);
     }
@@ -80,7 +79,7 @@ public class Land {
 
     void setUpIndices(){
         indices = new short[(width -1) * (height -1) * 6];
-        short index = 0;
+        int index = 0;
         for (int y =0; y < height -1; y++){
             for (int x = 0; x < width -1; x++){
                 short lowerLeft = (short) (x + y*width);
@@ -100,21 +99,20 @@ public class Land {
     }
 
     void loadHeightData(){
+        Texture heightTexture = new Texture("heightmap.png");
+        width = heightTexture.getWidth();
+        height = heightTexture.getHeight();
+
         heightData = new float[width][height];
-        heightData[0][0] = 0;
-        heightData[1][0] = 0;
-        heightData[2][0] = 0;
-        heightData[3][0] = 0;
+        heightTexture.getTextureData().prepare();
+        Pixmap pixels = heightTexture.getTextureData().consumePixmap();
+        for (int y = 0; y < height; y++){
+            for (int x = 0; x < width; x++){
+                int pixelData = (pixels.getPixel(x, y) & 0xff000000) >> 24;
+                heightData[x][y] = pixelData/5f;
+            }
+        }
 
-        heightData[0][1] = .5f;
-        heightData[1][1] = 0;
-        heightData[2][1] = -1f;
-        heightData[3][1] = .2f;
-
-        heightData[0][2] = 1f;
-        heightData[1][2] = 1.2f;
-        heightData[2][2] = .8f;
-        heightData[3][2] = 0;
     }
 
     public void render(Camera cam){
